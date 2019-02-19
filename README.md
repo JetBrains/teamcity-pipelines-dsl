@@ -24,7 +24,7 @@ The library provides a number of extensions to simplify creating TeamCity build 
 	 <groupId>com.github.JetBrains</groupId>
 	 <artifactId>teamcity-pipelines-dsl</artifactId>
 	 <version>[tag]</version>
-</dependency>
+   </dependency>
 ```
 
 
