@@ -58,8 +58,6 @@ fun Chain.build(bt: BuildType, block: BuildType.() -> Unit): BuildType {
 }
 
 fun Project.chain(block: Chain.() -> Unit): Chain {
-//    val chain = Chian()
-//    chain.block()
     val chain = Chain().apply(block)
 
     val order = arrayListOf<BuildType>()
