@@ -2,7 +2,7 @@
 <project>
   <modelVersion>4.0.0</modelVersion>
   <name>App Config DSL Script</name>
-  <groupId>jetbrains.teamcity</groupId>
+  <groupId>com.github.jetbrains</groupId>
   <artifactId>teamcity-pipelines-dsl</artifactId>
   <version>1.0-SNAPSHOT</version>
 
