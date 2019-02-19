@@ -27,3 +27,5 @@ The library provides a number of extensions to simplify creating TeamCity build 
 
 
 Enjoy!
+
+[![](https://jitpack.io/v/JetBrains/teamcity-pipelines-dsl.svg)](https://jitpack.io/#JetBrains/teamcity-pipelines-dsl)
