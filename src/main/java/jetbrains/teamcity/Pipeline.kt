@@ -1,6 +1,5 @@
 import jetbrains.buildServer.configs.kotlin.v2018_2.BuildType
 import jetbrains.buildServer.configs.kotlin.v2018_2.Project
-import jetbrains.buildServer.configs.kotlin.v2018_2.triggers.vcs
 //import jetbrains.buildServer.configs.kotlin.v2018_2.triggers.vcs
 import java.lang.IllegalStateException
 
@@ -79,24 +78,24 @@ fun Project.chain(block: Chain.() -> Unit): Chain {
 
     buildTypesOrder = order
 
-    chain.stages.lastOrNull()?.let {
-        if (it is Serial) {
-            it.buildType.triggers{
-                vcs {
-                    watchChangesInDependencies = true
-                }
-            }
-        }
-        if (it is Parallel) {
-            it.buildTypes.forEach {
-                it.triggers {
-                    vcs {
-                        watchChangesInDependencies = true
-                    }
-                }
-            }
-        }
-    }
+//    chain.stages.lastOrNull()?.let {
+//        if (it is Serial) {
+//            it.buildType.triggers{
+//                vcs {
+//                    watchChangesInDependencies = true
+//                }
+//            }
+//        }
+//        if (it is Parallel) {
+//            it.buildTypes.forEach {
+//                it.triggers {
+//                    vcs {
+//                        watchChangesInDependencies = true
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     return chain
 }
