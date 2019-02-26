@@ -168,4 +168,53 @@ The result is as follows:
                      | spect |       | anceTests  |
                      | ions  |       |____________|
                      |_______|      
-```  
+```
+
+There's actually an alternative form of the build() function that allows specifying the build configuration inline:
+
+
+```kotlin
+    sequence {
+        build {
+            id("Compile")
+            name = "Compile"
+            
+            //alternatively, we could use produces() function here
+            artifactRules = "target/application.jar"
+         
+            vcs {
+              root(ApplicationVcs)
+            }
+            
+            steps {
+               maven {
+                  goals = "clean package"
+               }
+            } 
+        }
+        build {
+            id("Test")
+            name = "Test"
+            
+            vcs {
+               root(ApplicationTestsVcs)
+            }
+            
+            steps {
+               // do something here..
+            }
+            
+            // requires(...) is an alternative to 
+            // dependencies { at
+            //   artifact(Compile) {
+            //     artifactRules = ..
+            //   }
+            // }
+            requires(Compile, "application.jar")
+            
+        }
+    }   
+``` 
+
+In the example above, we define two build configurations -- Compile and Test -- and register those in the sequence, meaning that Test build configuration will have a snapshot dependency on Compile.
+ 
