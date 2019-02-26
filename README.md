@@ -175,7 +175,7 @@ There's actually an alternative form of the build() function that allows specify
 
 ```kotlin
     sequence {
-        build {
+        val compile = build {
             id("Compile")
             name = "Compile"
             
@@ -192,7 +192,7 @@ There's actually an alternative form of the build() function that allows specify
                }
             } 
         }
-        build {
+        val test = build {
             id("Test")
             name = "Test"
             
@@ -206,11 +206,11 @@ There's actually an alternative form of the build() function that allows specify
             
             // requires(...) is an alternative to 
             // dependencies { at
-            //   artifact(Compile) {
+            //   artifact(compile) {
             //     artifactRules = ..
             //   }
             // }
-            requires(Compile, "application.jar")
+            requires(compile, "application.jar")
             
         }
     }   
