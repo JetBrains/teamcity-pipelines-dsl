@@ -26,6 +26,11 @@ fun Parallel.build(block: BuildType.() -> Unit): BuildType {
     return bt
 }
 
+fun Parallel.build(bt: BuildType): BuildType {
+    buildTypes.add(bt)
+    return bt
+}
+
 fun Parallel.sequence(block: Sequence.() -> Unit): Sequence {
     val sequence = Sequence().apply(block)
     buildDependencies(sequence)
@@ -54,6 +59,11 @@ fun Sequence.build(bt: BuildType, block: BuildType.() -> Unit): BuildType {
 
 fun Sequence.build(block: BuildType.() -> Unit): BuildType {
     val bt = BuildType().apply(block)
+    stages.add(Single(bt))
+    return bt
+}
+
+fun Sequence.build(bt: BuildType): BuildType {
     stages.add(Single(bt))
     return bt
 }
@@ -232,5 +242,30 @@ private fun Project.registerBuilds(sequence: Sequence) {
     }
 }
 
-fun BuildType.produces(artifacts: String) {}
-fun BuildType.requires(bt: BuildType, artifacts: String) {}
+fun Project.build(bt: BuildType, block: BuildType.() -> Unit): BuildType {
+    bt.apply(block)
+    buildType(bt)
+    return bt
+}
+
+fun Project.build(block: BuildType.() -> Unit): BuildType {
+    val bt = BuildType().apply(block)
+    buildType(bt)
+    return bt
+}
+
+fun Project.build(bt: BuildType): BuildType {
+    buildType(bt)
+    return bt
+}
+
+
+fun BuildType.produces(artifacts: String) {
+    artifactRules = artifacts
+}
+
+fun BuildType.requires(bt: BuildType, artifacts: String) {
+    dependencies.artifacts(bt) {
+        artifactRules = artifacts
+    }
+}
