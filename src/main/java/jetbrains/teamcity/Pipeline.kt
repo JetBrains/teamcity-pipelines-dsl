@@ -1,5 +1,6 @@
 import jetbrains.buildServer.configs.kotlin.v2018_2.BuildType
 import jetbrains.buildServer.configs.kotlin.v2018_2.Project
+import jetbrains.buildServer.configs.kotlin.v2018_2.SnapshotDependency
 
 interface Stage
 
@@ -36,6 +37,20 @@ fun Parallel.sequence(block: Sequence.() -> Unit): Sequence {
     buildDependencies(sequence)
     sequences.add(sequence)
     return sequence
+}
+
+fun Parallel.dependsOn(bt: BuildType, settings: SnapshotDependency.() -> Unit = {}){
+    TODO("not implemented")
+//    dependencies.dependency(bt){
+//        snapshot(settings)
+//    }
+}
+
+fun Sequence.dependsOn(bt: BuildType, settings: SnapshotDependency.() -> Unit = {}){
+    TODO("not implemented")
+//    dependencies.dependency(bt){
+//        snapshot(settings)
+//    }
 }
 
 fun Sequence.sequence(block: Sequence.() -> Unit): Stage {
@@ -259,7 +274,6 @@ fun Project.build(bt: BuildType): BuildType {
     return bt
 }
 
-
 fun BuildType.produces(artifacts: String) {
     artifactRules = artifacts
 }
@@ -267,5 +281,11 @@ fun BuildType.produces(artifacts: String) {
 fun BuildType.requires(bt: BuildType, artifacts: String) {
     dependencies.artifacts(bt) {
         artifactRules = artifacts
+    }
+}
+
+fun BuildType.dependsOn(bt: BuildType, settings: SnapshotDependency.() -> Unit = {}){
+    dependencies.dependency(bt){
+        snapshot(settings)
     }
 }
