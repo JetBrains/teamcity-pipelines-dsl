@@ -15,7 +15,7 @@ class Sequence : Stage {
     val stages = arrayListOf<Stage>()
 }
 
-fun Parallel.build(bt: BuildType, block: BuildType.() -> Unit): BuildType {
+fun Parallel.build(bt: BuildType, block: BuildType.() -> Unit = {}): BuildType {
     bt.apply(block)
     buildTypes.add(bt)
     return bt
@@ -23,11 +23,6 @@ fun Parallel.build(bt: BuildType, block: BuildType.() -> Unit): BuildType {
 
 fun Parallel.build(block: BuildType.() -> Unit): BuildType {
     val bt = BuildType().apply(block)
-    buildTypes.add(bt)
-    return bt
-}
-
-fun Parallel.build(bt: BuildType): BuildType {
     buildTypes.add(bt)
     return bt
 }
@@ -66,7 +61,7 @@ fun Sequence.parallel(block: Parallel.() -> Unit): Stage {
     return parallel
 }
 
-fun Sequence.build(bt: BuildType, block: BuildType.() -> Unit): BuildType {
+fun Sequence.build(bt: BuildType, block: BuildType.() -> Unit = {}): BuildType {
     bt.apply(block)
     stages.add(Single(bt))
     return bt
@@ -74,11 +69,6 @@ fun Sequence.build(bt: BuildType, block: BuildType.() -> Unit): BuildType {
 
 fun Sequence.build(block: BuildType.() -> Unit): BuildType {
     val bt = BuildType().apply(block)
-    stages.add(Single(bt))
-    return bt
-}
-
-fun Sequence.build(bt: BuildType): BuildType {
     stages.add(Single(bt))
     return bt
 }
@@ -257,7 +247,7 @@ private fun Project.registerBuilds(sequence: Sequence) {
     }
 }
 
-fun Project.build(bt: BuildType, block: BuildType.() -> Unit): BuildType {
+fun Project.build(bt: BuildType, block: BuildType.() -> Unit = {}): BuildType {
     bt.apply(block)
     buildType(bt)
     return bt
@@ -265,11 +255,6 @@ fun Project.build(bt: BuildType, block: BuildType.() -> Unit): BuildType {
 
 fun Project.build(block: BuildType.() -> Unit): BuildType {
     val bt = BuildType().apply(block)
-    buildType(bt)
-    return bt
-}
-
-fun Project.build(bt: BuildType): BuildType {
     buildType(bt)
     return bt
 }
