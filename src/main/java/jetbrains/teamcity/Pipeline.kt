@@ -34,28 +34,14 @@ fun Parallel.sequence(block: Sequence.() -> Unit): Sequence {
     return sequence
 }
 
-fun Parallel.dependsOn(bt: BuildType, settings: SnapshotDependency.() -> Unit = {}){
-    TODO("not implemented")
-//    dependencies.dependency(bt){
-//        snapshot(settings)
-//    }
-}
-
-fun Sequence.dependsOn(bt: BuildType, settings: SnapshotDependency.() -> Unit = {}){
-    TODO("not implemented")
-//    dependencies.dependency(bt){
-//        snapshot(settings)
-//    }
-}
-
-fun Sequence.sequence(block: Sequence.() -> Unit): Stage {
+fun Sequence.sequence(block: Sequence.() -> Unit): Sequence {
     val sequence = Sequence().apply(block)
     buildDependencies(sequence)
     stages.add(sequence)
     return sequence
 }
 
-fun Sequence.parallel(block: Parallel.() -> Unit): Stage {
+fun Sequence.parallel(block: Parallel.() -> Unit): Parallel {
     val parallel = Parallel().apply(block)
     stages.add(parallel)
     return parallel
@@ -149,7 +135,7 @@ fun singleDependsOnParallel(stage: Single, dependency: Parallel) {
 }
 
 fun singleDependsOnSequence(stage: Single, dependency: Sequence) {
-    dependency.stages.lastOrNull()?.let {lastStage ->
+    dependency.stages.lastOrNull()?.let { lastStage ->
         if (lastStage is Single) {
             singleDependsOnSingle(stage, lastStage)
         }
@@ -163,34 +149,34 @@ fun singleDependsOnSequence(stage: Single, dependency: Sequence) {
 }
 
 fun parallelDependsOnSingle(stage: Parallel, dependency: Single) {
-    stage.buildTypes.forEach {buildType ->
+    stage.buildTypes.forEach { buildType ->
         singleDependsOnSingle(Single(buildType), dependency)
     }
-    stage.sequences.forEach {sequence ->
+    stage.sequences.forEach { sequence ->
         sequenceDependsOnSingle(sequence, dependency)
     }
 }
 
 fun parallelDependsOnParallel(stage: Parallel, dependency: Parallel) {
-    stage.buildTypes.forEach {buildType ->
+    stage.buildTypes.forEach { buildType ->
         singleDependsOnParallel(Single(buildType), dependency)
     }
-    stage.sequences.forEach {sequence ->
+    stage.sequences.forEach { sequence ->
         sequenceDependsOnParallel(sequence, dependency)
     }
 }
 
 fun parallelDependsOnSequence(stage: Parallel, dependency: Sequence) {
-    stage.buildTypes.forEach {buildType ->
+    stage.buildTypes.forEach { buildType ->
         singleDependsOnSequence(Single(buildType), dependency)
     }
-    stage.sequences.forEach {sequence ->
+    stage.sequences.forEach { sequence ->
         sequenceDependsOnSequence(sequence, dependency)
     }
 }
 
 fun sequenceDependsOnSingle(stage: Sequence, dependency: Single) {
-    stage.stages.firstOrNull()?.let {firstStage ->
+    stage.stages.firstOrNull()?.let { firstStage ->
         if (firstStage is Single) {
             singleDependsOnSingle(firstStage, dependency)
         }
@@ -269,8 +255,33 @@ fun BuildType.requires(bt: BuildType, artifacts: String) {
     }
 }
 
-fun BuildType.dependsOn(bt: BuildType, settings: SnapshotDependency.() -> Unit = {}){
-    dependencies.dependency(bt){
+fun BuildType.dependsOn(bt: BuildType, settings: SnapshotDependency.() -> Unit = {}) {
+    dependencies.dependency(bt) {
         snapshot(settings)
+    }
+}
+
+//TODO: apply settings
+fun BuildType.dependsOn(parallel: Parallel, settings: SnapshotDependency.() -> Unit = {}) {
+    singleDependsOnParallel(Single(this), parallel)
+}
+
+//TODO: apply settings
+fun BuildType.dependsOn(sequence: Sequence, settings: SnapshotDependency.() -> Unit = {}) {
+    singleDependsOnSequence(Single(this), sequence)
+}
+
+//TODO: apply settings
+fun Stage.dependsOn(bt: BuildType, settings: SnapshotDependency.() -> Unit = {}) {
+    stageDependsOnSingle(this, Single(bt))
+}
+
+//TODO: apply settings
+fun Stage.dependsOn(stage: Stage, settings: SnapshotDependency.() -> Unit = {}) {
+    if (stage is Parallel) {
+        stageDependsOnParallel(this, stage)
+    }
+    if (stage is Sequence) {
+        stageDepdendsOnSequence(this, stage)
     }
 }
