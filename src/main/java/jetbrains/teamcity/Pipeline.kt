@@ -1,17 +1,20 @@
+import jetbrains.buildServer.configs.kotlin.v2018_2.ArtifactDependency
 import jetbrains.buildServer.configs.kotlin.v2018_2.BuildType
 import jetbrains.buildServer.configs.kotlin.v2018_2.Project
 import jetbrains.buildServer.configs.kotlin.v2018_2.SnapshotDependency
 
-interface Stage
+abstract class Stage {
+    val dependencies = arrayListOf<Stage>()
+}
 
-class Single(val buildType: BuildType) : Stage
+class Single(val buildType: BuildType) : Stage()
 
-class Parallel : Stage {
+class Parallel : Stage() {
     val buildTypes = arrayListOf<BuildType>()
     val sequences = arrayListOf<Sequence>()
 }
 
-class Sequence : Stage {
+class Sequence : Stage() {
     val stages = arrayListOf<Stage>()
 }
 
@@ -67,21 +70,28 @@ fun Project.sequence(block: Sequence.() -> Unit): Sequence {
 }
 
 fun buildDependencies(sequence: Sequence) {
-    var previous: Stage? = null
+    var previous: Stage? = sequence.dependencies.firstOrNull()
 
     for (stage in sequence.stages) {
         if (previous != null) {
-            if (previous is Single) {
-                stageDependsOnSingle(stage, previous)
-            }
-            if (previous is Parallel) {
-                stageDependsOnParallel(stage, previous)
-            }
-            if (previous is Sequence) {
-                stageDepdendsOnSequence(stage, previous)
-            }
+            stageDependsOnStage(stage, previous)
+        }
+        stage.dependencies.forEach { dependency ->
+            stageDependsOnStage(stage, dependency)
         }
         previous = stage
+    }
+}
+
+fun stageDependsOnStage(stage: Stage, dependency: Stage){
+    if (dependency is Single) {
+        stageDependsOnSingle(stage, dependency)
+    }
+    if (dependency is Parallel) {
+        stageDependsOnParallel(stage, dependency)
+    }
+    if (dependency is Sequence) {
+        stageDepdendsOnSequence(stage, dependency)
     }
 }
 
@@ -249,9 +259,10 @@ fun BuildType.produces(artifacts: String) {
     artifactRules = artifacts
 }
 
-fun BuildType.requires(bt: BuildType, artifacts: String) {
+fun BuildType.requires(bt: BuildType, artifacts: String, settings: ArtifactDependency.() -> Unit = {}) {
     dependencies.artifacts(bt) {
         artifactRules = artifacts
+        settings()
     }
 }
 
@@ -261,27 +272,21 @@ fun BuildType.dependsOn(bt: BuildType, settings: SnapshotDependency.() -> Unit =
     }
 }
 
-//TODO: apply settings
-fun BuildType.dependsOn(parallel: Parallel, settings: SnapshotDependency.() -> Unit = {}) {
-    singleDependsOnParallel(Single(this), parallel)
+
+/**
+ * !!!WARNING!!!
+ *
+ * This method works as expected only if the <code>stage</code> is already populated
+ */
+fun BuildType.dependsOn(stage: Stage, settings: SnapshotDependency.() -> Unit = {}) {
+    stageDependsOnStage(Single(this), stage)
 }
 
-//TODO: apply settings
-fun BuildType.dependsOn(sequence: Sequence, settings: SnapshotDependency.() -> Unit = {}) {
-    singleDependsOnSequence(Single(this), sequence)
-}
 
-//TODO: apply settings
 fun Stage.dependsOn(bt: BuildType, settings: SnapshotDependency.() -> Unit = {}) {
-    stageDependsOnSingle(this, Single(bt))
+    dependsOn(Single(bt))
 }
 
-//TODO: apply settings
 fun Stage.dependsOn(stage: Stage, settings: SnapshotDependency.() -> Unit = {}) {
-    if (stage is Parallel) {
-        stageDependsOnParallel(this, stage)
-    }
-    if (stage is Sequence) {
-        stageDepdendsOnSequence(this, stage)
-    }
+    dependencies.add(stage)
 }
