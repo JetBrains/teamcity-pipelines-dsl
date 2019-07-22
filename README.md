@@ -217,4 +217,54 @@ There's actually an alternative form of the build() function that allows specify
 ``` 
 
 In the example above, we define two build configurations -- Compile and Test -- and register those in the sequence, meaning that Test build configuration will have a snapshot dependency on Compile.
- 
+
+The **sequence** is an abstraction that allows you to specify the dependencies in build configurations depending on the order in which they are declared within the sequence.  
+
+However, sometimes it might be needed to create a dependency on a build configuration that is defined outside of the sequence. In this case, it is possible to use **dependsOn** method within a block 
+
+
+```kotlin
+    build(OtherBuild)
+     
+    sequence {
+        build(Compile) {
+            produces("application.jar")
+        }
+        parallel {
+            dependsOn(SomeOtherConfiguration)
+            build(Test) {
+                requires(Compile, "application.jar")
+                produces("test.reports.zip")
+            }
+            sequence {
+                build(RunInspections) {
+                   produces("inspection.reports.zip")
+                }
+                build(RunPerformanceTests) {
+                   produces("perf.reports.zip")
+                }
+            }         
+        }
+        build(Package) {
+            requires(Compile, "application.jar")
+            produces("application.zip")
+        }
+    }   
+```
+
+The **dependsOn** method invoked in a parallel block adds a dependency to every stage in that block. 
+Hence, Test and RunInspections build configuration will end up having a dependency on OtherBuild:
+
+```  
+   ________________
+  |                |
+  |  OtherBuild    |                 _______
+  |________________|--------------->|       |
+        |          _________        | Test  |                                _________
+        |         |         | ----> |_______| ----------------------------> |         |             
+        |         | Compile |        _______         ____________           | Package |  
+        |         |_________| ----> | RunIn | ----> | RunPerform | -------> |_________|
+        |                           | spect |       | anceTests  |
+        --------------------------->| ions  |       |____________|
+                                    |_______|      
+```
