@@ -268,3 +268,52 @@ Hence, Test and RunInspections build configuration will end up having a dependen
         --------------------------->| ions  |       |____________|
                                     |_______|      
 ```
+
+You can also use dependsOn to declare a dependency for a build configuration on a full sequence:
+
+
+
+```kotlin
+    val seq = sequence {
+        build(Compile) {
+            produces("application.jar")
+        }
+        parallel {
+            dependsOn(SomeOtherConfiguration)
+            build(Test) {
+                requires(Compile, "application.jar")
+                produces("test.reports.zip")
+            }
+            sequence {
+                build(RunInspections) {
+                   produces("inspection.reports.zip")
+                }
+                build(RunPerformanceTests) {
+                   produces("perf.reports.zip")
+                }
+            }         
+        }
+        build(Package) {
+            requires(Compile, "application.jar")
+            produces("application.zip")
+        }
+    }     
+
+    build(OtherBuild){
+        dependsOn(seq)
+    }
+``` 
+
+The result is as follows:
+
+```
+                      _______
+                     |       |
+    _________        | Test  |                                _________          ____________
+   |         | ----> |_______| ----------------------------> |         |        |            |     
+   | Compile |        _______         ____________           | Package | -----> | OtherBuild |
+   |_________| ----> | RunIn | ----> | RunPerform | -------> |_________|        |____________|
+                     | spect |       | anceTests  |
+                     | ions  |       |____________|
+                     |_______|      
+```
