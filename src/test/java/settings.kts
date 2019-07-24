@@ -1,7 +1,7 @@
-import jetbrains.buildServer.configs.kotlin.v2018_2.BuildType
-import jetbrains.buildServer.configs.kotlin.v2018_2.Project
-import jetbrains.buildServer.configs.kotlin.v2018_2.project
-import jetbrains.buildServer.configs.kotlin.v2018_2.version
+import jetbrains.buildServer.configs.kotlin.v2018_2.*
+import net.sourceforge.plantuml.SourceStringReader
+import java.io.File
+import java.io.FileOutputStream
 
 
 /*
@@ -14,55 +14,57 @@ import jetbrains.buildServer.configs.kotlin.v2018_2.version
 version = "2018.2"
 
 project {
-
-    val otherBuild = build {
-        id("OtherBuild")
+    val settings: SnapshotDependency.() -> Unit = {
+        runOnSameAgent = true
+        onDependencyCancel = FailureAction.IGNORE
+        reuseBuilds = ReuseBuilds.NO
     }
-
-    val sequence = sequence {
-        build {
-            id("blah blah blah")
-        }
-        build {
-            id("nom nom nom")
-        }
-    }
-
 
     sequence {
+        val other = build {
+            id("other")
+        }
         build(Compile) {
             produces("application.jar")
         }
+        val parallel = parallel {
+            dependsOn(other, settings)
+            build { id("aaa") }
+            build { id("bbb") }
+        }
+        build { id("inTheMiddle") }
         parallel {
-            dependsOn(sequence)
-
+            dependsOn(other, settings)
             build(Test1)
-
-            build {
-                id("asdasd")
-            }
-
             sequence {
-                dependsOn(Compile)
                 build(Test2)
                 build(Test3)
             }
 
+            dependencySettings {
+                runOnSameAgent = true
+                onDependencyCancel = FailureAction.FAIL_TO_START
+                reuseBuilds = ReuseBuilds.ANY
+            }
         }
         build(Package) {
             requires(Compile, "application.jar")
             produces("application.zip")
+        }
+        build {
+            id("ccc")
+            dependsOn(parallel, settings)
         }
         build(Publish) {
             requires(Package, "application.zip")
         }
     }
 
-    build {
-        id("YetAnotherBuild")
-        dependsOn(Test)
-        dependsOn(sequence)
-    }
+    //region plantUml
+    val out = FileOutputStream(File("image.png"))
+    val reader = SourceStringReader(plantUml())
+    reader.generateImage(out)
+    //endregion
 
     println()
 }
@@ -104,3 +106,33 @@ object Deploy : BuildType({
     name = "Deploy"
 })
 
+
+fun Project.plantUml() : String {
+
+
+
+    var plantUml = "@startuml\n\n"
+
+    plantUml += "(*) --> \"${buildTypes.first().id?.value}\"\n"
+
+    buildTypes.forEach { buildType ->
+        buildType.dependencies.items.forEach { dependency ->
+            dependency.snapshot?.let {
+                //runOnSameAgent=${it.runOnSameAgent}
+                //onDependencyCancel=${it.onDependencyCancel}
+                //runDependencyFailure=${it.onDependencyFailure}
+                //reuseBuilds=${it.reuseBuilds}
+                plantUml += "\"${dependency.buildTypeId.id?.value}\" --> [sameAgent=${it.runOnSameAgent} dependencyCancel=${it.onDependencyCancel} reuseBuilds=${it.reuseBuilds}] \"${buildType.id}\"\n"
+            }
+            dependency.artifacts.forEach { artifact ->
+                plantUml += "\"${dependency.buildTypeId.id?.value}\" --> [A: ${artifact.artifactRules}] \"${buildType.id}\"\n"
+            }
+        }
+    }
+
+    plantUml += "\"${buildTypes.last().id?.value}\" --> (*)\n"
+
+    plantUml += "\n@enduml"
+
+    return plantUml
+}
