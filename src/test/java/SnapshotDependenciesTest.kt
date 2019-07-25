@@ -1,14 +1,14 @@
-import jetbrains.buildServer.configs.kotlin.v2018_2.BuildType
-import jetbrains.buildServer.configs.kotlin.v2018_2.Project
+import jetbrains.buildServer.configs.kotlin.v2018_2.*
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.lang.IllegalStateException
 
 
 class SnapshotDependenciesTest {
 
     private fun BuildType.dependencyId(index: Int) =
         dependencies.items[index].buildTypeId.id?.value
-    
+
 
     @Test
     fun simpleSequence() {
@@ -118,7 +118,7 @@ class SnapshotDependenciesTest {
     }
 
     @Test
-    fun outOfSequenceDependency(){
+    fun outOfSequenceDependency() {
         //region given for outOfSequenceDependency
         val a = BuildType { id("A") }
         val b = BuildType { id("B") }
@@ -195,7 +195,7 @@ class SnapshotDependenciesTest {
             }
         }
 
-        //region assertions for minimalDiamond
+        //region assertions for parallelDependsOnParallel
         assertEquals(6, project.buildTypes.size)
 
         assertEquals(0, a.dependencies.items.size)
@@ -218,4 +218,68 @@ class SnapshotDependenciesTest {
         assertEquals("E", f.dependencyId(1))
         //endregion
     }
+
+    @Test
+    fun simpleDependencySettings() {
+
+        //region given for simpleDependencySettings
+        val a = BuildType { id("A") }
+        val b = BuildType { id("B") }
+
+        val settings: SnapshotDependency.() -> Unit = {
+            runOnSameAgent = true
+            onDependencyCancel = FailureAction.IGNORE
+            reuseBuilds = ReuseBuilds.NO
+        }
+        //endregion
+
+        val project = Project {
+            sequence {
+                build(a)
+                sequence {
+                    build(b){
+                        dependencySettings(settings)
+                    }
+                }
+            }
+        }
+
+        assertEquals(2, project.buildTypes.size)
+
+        assertEquals(0, a.dependencies.items.size)
+        assertEquals(1, b.dependencies.items.size)
+
+        assertEquals("A", b.dependencyId(0))
+
+        val expected = SnapshotDependency().apply(settings)
+        val actual = b.dependencies.items[0].snapshot
+        assertEquals(expected.runOnSameAgent, actual!!.runOnSameAgent)
+        assertEquals(expected.onDependencyCancel, actual.onDependencyCancel)
+        assertEquals(expected.onDependencyFailure, actual.onDependencyFailure)
+    }
+
+    @Test
+    fun sequenceDependencies() {
+        val a = BuildType { id("A") }
+        val b = BuildType { id("B") }
+        val c = BuildType { id("C") }
+
+        val project = Project {
+            val s1 = sequence { build(a) }
+            val s2 = sequence { build(b) }
+
+            val s3 = sequence {
+                dependsOn(s1)
+                dependsOn(s2)
+                build(c)
+            }
+        }
+
+        assertEquals(3, project.buildTypes.size)
+        assertEquals(0, a.dependencies.items.size)
+        assertEquals(0, b.dependencies.items.size)
+        assertEquals(2, c.dependencies.items.size)
+    }
+
+
 }

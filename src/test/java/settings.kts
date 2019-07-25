@@ -107,8 +107,7 @@ object Deploy : BuildType({
 })
 
 
-fun Project.plantUml() : String {
-
+fun Project.plantUml(): String {
 
 
     var plantUml = "@startuml\n\n"

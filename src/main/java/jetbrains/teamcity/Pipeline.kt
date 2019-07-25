@@ -2,6 +2,7 @@ import jetbrains.buildServer.configs.kotlin.v2018_2.ArtifactDependency
 import jetbrains.buildServer.configs.kotlin.v2018_2.BuildType
 import jetbrains.buildServer.configs.kotlin.v2018_2.Project
 import jetbrains.buildServer.configs.kotlin.v2018_2.SnapshotDependency
+import java.lang.IllegalStateException
 
 typealias DependencySettings = SnapshotDependency.() -> Unit
 
@@ -239,7 +240,7 @@ fun sequenceDependsOnSequence(stage: Sequence, dependency: Pair<Sequence, Depend
     }
 }
 
-private fun Project.registerBuilds(sequence: Sequence) {
+fun Project.registerBuilds(sequence: Sequence) {
     sequence.stages.forEach {
         if (it is Single) {
             buildType(it.buildType)
@@ -251,6 +252,9 @@ private fun Project.registerBuilds(sequence: Sequence) {
             it.sequences.forEach { seq ->
                 registerBuilds(seq)
             }
+        }
+        if(it is Sequence) {
+            registerBuilds(it)
         }
     }
 }
@@ -305,6 +309,10 @@ fun Stage.dependsOn(stage: Stage, dependencySettings: DependencySettings = {}) {
 
 fun Stage.dependencySettings(dependencySettings: DependencySettings = {}) {
     this.dependencySettings = dependencySettings
+}
+
+fun BuildType.dependencySettings(dependencySettings: DependencySettings = {}) {
+    throw IllegalStateException("dependencySettings can only be used with parallel {} or sequence {}. Please use dependsOn instead")
 }
 
 
