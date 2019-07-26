@@ -84,11 +84,11 @@
       <version>${kotlin.version}</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>net.sourceforge.plantuml</groupId>
-      <artifactId>plantuml</artifactId>
-      <version>8059</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>net.sourceforge.plantuml</groupId>-->
+<!--      <artifactId>plantuml</artifactId>-->
+<!--      <version>8059</version>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

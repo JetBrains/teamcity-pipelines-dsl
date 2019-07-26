@@ -1,8 +1,7 @@
 import jetbrains.buildServer.configs.kotlin.v2018_2.*
-import net.sourceforge.plantuml.SourceStringReader
-import sun.management.snmp.jvminstr.JvmThreadInstanceEntryImpl.ThreadStateMap.Byte1.other
-import java.io.File
-import java.io.FileOutputStream
+//import net.sourceforge.plantuml.SourceStringReader
+//import java.io.File
+//import java.io.FileOutputStream
 
 
 /*
@@ -15,50 +14,38 @@ import java.io.FileOutputStream
 version = "2018.2"
 
 project {
-    val settings: SnapshotDependency.() -> Unit = {
-        runOnSameAgent = true
-        onDependencyCancel = FailureAction.IGNORE
-        reuseBuilds = ReuseBuilds.NO
+
+
+    val build = build {
+        id("other")
     }
 
     sequence {
-        build(Compile) {
-            produces("application.jar")
-        }
+        build(Compile)
         parallel {
-            build(Test1)
-            sequence {
-                build(Test2)
-                build(Test3)
-            }
+            build(Test){
+                dependsOn(build){
 
-            dependencySettings {
-                runOnSameAgent = true
-                onDependencyCancel = FailureAction.FAIL_TO_START
-                reuseBuilds = ReuseBuilds.ANY
+                }
+                produces("artifact")
+                requires(Compile, "file.txt")
+            }
+            sequence {
+                build(Test1) {
+                    dependsOn(build){
+                        runOnSameAgent = true
+                    }
+                }
+                build(Test2)
             }
         }
-        build(Package) {
-            requires(Compile, "application.jar")
-            produces("application.zip")
-        }
-        build(Publish) {
-            requires(Package, "application.zip")
-        }
+        build(Package)
     }
 
-    //region plantUml
-    val out = FileOutputStream(File("image.png"))
-    val reader = SourceStringReader(plantUml())
-    reader.generateImage(out)
-    //endregion
-
-    println()
 }
 
 object Compile : BuildType({
     name = "Compile"
-
 })
 
 object Test : BuildType({
@@ -94,31 +81,40 @@ object Deploy : BuildType({
 })
 
 
-fun Project.plantUml(): String {
-
-
-    var plantUml = "@startuml\n\n"
-
-    plantUml += "(*) --> \"${buildTypes.first().id?.value}\"\n"
-
-    buildTypes.forEach { buildType ->
-        buildType.dependencies.items.forEach { dependency ->
-            dependency.snapshot?.let {
-                //runOnSameAgent=${it.runOnSameAgent}
-                //onDependencyCancel=${it.onDependencyCancel}
-                //runDependencyFailure=${it.onDependencyFailure}
-                //reuseBuilds=${it.reuseBuilds}
-                plantUml += "\"${dependency.buildTypeId.id?.value}\" --> [sameAgent=${it.runOnSameAgent} dependencyCancel=${it.onDependencyCancel} reuseBuilds=${it.reuseBuilds}] \"${buildType.id}\"\n"
-            }
-            dependency.artifacts.forEach { artifact ->
-                plantUml += "\"${dependency.buildTypeId.id?.value}\" --> [A: ${artifact.artifactRules}] \"${buildType.id}\"\n"
-            }
-        }
-    }
-
-    plantUml += "\"${buildTypes.last().id?.value}\" --> (*)\n"
-
-    plantUml += "\n@enduml"
-
-    return plantUml
-}
+//region plantUml
+//fun Project.plantUml() {
+//    //region plantUml
+//    val out = FileOutputStream(File("image.png"))
+//    val reader = SourceStringReader(ascii())
+//    reader.generateImage(out)
+//    //endregion
+//}
+//
+//fun Project.ascii(): String {
+//
+//    var plantUml = "@startuml\n\n"
+//
+//    plantUml += "(*) --> \"${buildTypes.first().id?.value}\"\n"
+//
+//    buildTypes.forEach { buildType ->
+//        buildType.dependencies.items.forEach { dependency ->
+//            dependency.snapshot?.let {
+//                //runOnSameAgent=${it.runOnSameAgent}
+//                //onDependencyCancel=${it.onDependencyCancel}
+//                //runDependencyFailure=${it.onDependencyFailure}
+//                //reuseBuilds=${it.reuseBuilds}
+//                plantUml += "\"${dependency.buildTypeId.id?.value}\" --> [sameAgent=${it.runOnSameAgent} dependencyCancel=${it.onDependencyCancel} reuseBuilds=${it.reuseBuilds}] \"${buildType.id}\"\n"
+//            }
+//            dependency.artifacts.forEach { artifact ->
+//                plantUml += "\"${dependency.buildTypeId.id?.value}\" --> [A: ${artifact.artifactRules}] \"${buildType.id}\"\n"
+//            }
+//        }
+//    }
+//
+//    plantUml += "\"${buildTypes.last().id?.value}\" --> (*)\n"
+//
+//    plantUml += "\n@enduml"
+//
+//    return plantUml
+//}
+//endregion
