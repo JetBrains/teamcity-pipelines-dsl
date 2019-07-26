@@ -1,5 +1,6 @@
 import jetbrains.buildServer.configs.kotlin.v2018_2.*
 import net.sourceforge.plantuml.SourceStringReader
+import sun.management.snmp.jvminstr.JvmThreadInstanceEntryImpl.ThreadStateMap.Byte1.other
 import java.io.File
 import java.io.FileOutputStream
 
@@ -21,20 +22,10 @@ project {
     }
 
     sequence {
-        val other = build {
-            id("other")
-        }
         build(Compile) {
             produces("application.jar")
         }
-        val parallel = parallel {
-            dependsOn(other, settings)
-            build { id("aaa") }
-            build { id("bbb") }
-        }
-        build { id("inTheMiddle") }
         parallel {
-            dependsOn(other, settings)
             build(Test1)
             sequence {
                 build(Test2)
@@ -50,10 +41,6 @@ project {
         build(Package) {
             requires(Compile, "application.jar")
             produces("application.zip")
-        }
-        build {
-            id("ccc")
-            dependsOn(parallel, settings)
         }
         build(Publish) {
             requires(Package, "application.zip")

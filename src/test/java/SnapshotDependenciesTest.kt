@@ -1,7 +1,6 @@
 import jetbrains.buildServer.configs.kotlin.v2018_2.*
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.lang.IllegalStateException
 
 
 class SnapshotDependenciesTest {
@@ -244,6 +243,7 @@ class SnapshotDependenciesTest {
             }
         }
 
+        //region assertions for simpleDependencySettings
         assertEquals(2, project.buildTypes.size)
 
         assertEquals(0, a.dependencies.items.size)
@@ -256,13 +256,73 @@ class SnapshotDependenciesTest {
         assertEquals(expected.runOnSameAgent, actual!!.runOnSameAgent)
         assertEquals(expected.onDependencyCancel, actual.onDependencyCancel)
         assertEquals(expected.onDependencyFailure, actual.onDependencyFailure)
+        //endregion
+    }
+
+    @Test
+    fun nestedSequenceSettings() {
+        //region given for dependsOnWithSettings
+        val a = BuildType { id("A") }
+        val b = BuildType { id("B") }
+        val c = BuildType { id("C") }
+        val d = BuildType { id("D") }
+        val e = BuildType { id("E") }
+        val settings: SnapshotDependency.() -> Unit = {
+            runOnSameAgent = true
+            onDependencyCancel = FailureAction.IGNORE
+            reuseBuilds = ReuseBuilds.NO
+        }
+        //endregion
+
+        val project = Project {
+            sequence {
+                build(a)
+                parallel {
+                    build(b)
+                    sequence {
+                        build(c)
+                        build(d)
+                    }
+                    dependencySettings(settings)
+                }
+                build(e)
+            }
+        }
+
+        assertEquals(5, project.buildTypes.size)
+
+        assertEquals(0, a.dependencies.items.size)
+        assertEquals(1, b.dependencies.items.size)
+        assertEquals(1, c.dependencies.items.size)
+        assertEquals(1, d.dependencies.items.size)
+        assertEquals(2, e.dependencies.items.size)
+
+        val expected = SnapshotDependency().apply(settings)
+        val actualForB = b.dependencies.items[0].snapshot
+        assertEquals(expected.runOnSameAgent, actualForB!!.runOnSameAgent)
+        assertEquals(expected.onDependencyCancel, actualForB.onDependencyCancel)
+        assertEquals(expected.onDependencyFailure, actualForB.onDependencyFailure)
+
+        val actualForC = c.dependencies.items[0].snapshot
+        assertEquals(expected.runOnSameAgent, actualForC!!.runOnSameAgent)
+        assertEquals(expected.onDependencyCancel, actualForC.onDependencyCancel)
+        assertEquals(expected.onDependencyFailure, actualForC.onDependencyFailure)
+
+        //TODO: The following fails because the settings are only applied to the fan-ins of the parallel block
+        val actualForD = d.dependencies.items[0].snapshot
+        assertEquals(expected.runOnSameAgent, actualForD!!.runOnSameAgent)
+        assertEquals(expected.onDependencyCancel, actualForD.onDependencyCancel)
+        assertEquals(expected.onDependencyFailure, actualForD.onDependencyFailure)
     }
 
     @Test
     fun sequenceDependencies() {
+
+        //region given for sequenceDependencies
         val a = BuildType { id("A") }
         val b = BuildType { id("B") }
         val c = BuildType { id("C") }
+        //endregion
 
         val project = Project {
             val s1 = sequence { build(a) }
@@ -275,11 +335,12 @@ class SnapshotDependenciesTest {
             }
         }
 
+        //region assertions for sequenceDependencies
         assertEquals(3, project.buildTypes.size)
         assertEquals(0, a.dependencies.items.size)
         assertEquals(0, b.dependencies.items.size)
-        assertEquals(2, c.dependencies.items.size)
+        assertEquals(2, c.dependencies.items.size) //currently fails
+        //endregion
     }
-
 
 }
