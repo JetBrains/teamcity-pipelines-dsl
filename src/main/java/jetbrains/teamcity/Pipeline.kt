@@ -74,7 +74,11 @@ fun Project.sequence(block: Sequence.() -> Unit): Sequence {
 }
 
 fun buildDependencies(sequence: Sequence) {
-    var previous = sequence.dependencies.firstOrNull()
+    sequence.dependencies.forEach {
+        stageDependsOnStage(sequence, it)
+    }
+
+    var previous: Pair<Stage, DependencySettings>? = null
 
     for (stage in sequence.stages) {
         if (previous != null) {

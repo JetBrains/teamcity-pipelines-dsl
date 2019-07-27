@@ -289,6 +289,7 @@ class SnapshotDependenciesTest {
             }
         }
 
+        //region assertions for nestedSequenceSettings
         assertEquals(5, project.buildTypes.size)
 
         assertEquals(0, a.dependencies.items.size)
@@ -313,6 +314,7 @@ class SnapshotDependenciesTest {
 //        assertEquals(expected.runOnSameAgent, actualForD!!.runOnSameAgent)
 //        assertEquals(expected.onDependencyCancel, actualForD.onDependencyCancel)
 //        assertEquals(expected.onDependencyFailure, actualForD.onDependencyFailure)
+        //endregion
     }
 
     @Test
@@ -322,6 +324,12 @@ class SnapshotDependenciesTest {
         val a = BuildType { id("A") }
         val b = BuildType { id("B") }
         val c = BuildType { id("C") }
+
+        val settings: SnapshotDependency.() -> Unit = {
+            runOnSameAgent = true
+            onDependencyCancel = FailureAction.IGNORE
+            reuseBuilds = ReuseBuilds.NO
+        }
         //endregion
 
         val project = Project {
@@ -329,17 +337,29 @@ class SnapshotDependenciesTest {
             val s2 = sequence { build(b) }
 
             val s3 = sequence {
-                dependsOn(s1)
+                dependsOn(s1, settings)
                 dependsOn(s2)
                 build(c)
             }
         }
 
         //region assertions for sequenceDependencies
-//        assertEquals(3, project.buildTypes.size)
-//        assertEquals(0, a.dependencies.items.size)
-//        assertEquals(0, b.dependencies.items.size)
-//        assertEquals(2, c.dependencies.items.size) //currently fails
+        assertEquals(3, project.buildTypes.size)
+        assertEquals(0, a.dependencies.items.size)
+        assertEquals(0, b.dependencies.items.size)
+        assertEquals(2, c.dependencies.items.size)
+
+        val expected = SnapshotDependency().apply(settings)
+        val cDependsOnA = c.dependencies.items[0].snapshot
+        assertEquals(expected.runOnSameAgent, cDependsOnA!!.runOnSameAgent)
+        assertEquals(expected.onDependencyCancel, cDependsOnA.onDependencyCancel)
+        assertEquals(expected.onDependencyFailure, cDependsOnA.onDependencyFailure)
+
+        val cDepensdOnB = c.dependencies.items[1].snapshot
+        val default = SnapshotDependency()
+        assertEquals(default.runOnSameAgent, cDepensdOnB!!.runOnSameAgent)
+        assertEquals(default.onDependencyCancel, cDepensdOnB.onDependencyCancel)
+        assertEquals(default.onDependencyFailure, cDepensdOnB.onDependencyFailure)
         //endregion
     }
 
