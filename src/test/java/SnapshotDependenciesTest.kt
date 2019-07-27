@@ -236,9 +236,8 @@ class SnapshotDependenciesTest {
             sequence {
                 build(a)
                 sequence {
-                    build(b){
-                        dependencySettings(settings)
-                    }
+                    build(b)
+                    dependencySettings(settings)
                 }
             }
         }
