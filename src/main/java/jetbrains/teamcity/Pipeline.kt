@@ -1,4 +1,8 @@
-package jetbrains.buildServer.configs.kotlin.v2018_2
+import jetbrains.buildServer.configs.kotlin.v2018_2.ArtifactDependency
+import jetbrains.buildServer.configs.kotlin.v2018_2.BuildType
+import jetbrains.buildServer.configs.kotlin.v2018_2.Project
+import jetbrains.buildServer.configs.kotlin.v2018_2.SnapshotDependency
+import java.lang.IllegalStateException
 
 typealias DependencySettings = SnapshotDependency.() -> Unit
 

@@ -1,5 +1,4 @@
-package jetbrains.buildServer.configs.kotlin.v2018_2
-
+import jetbrains.buildServer.configs.kotlin.v2018_2.*
 //import net.sourceforge.plantuml.SourceStringReader
 //import java.io.File
 //import java.io.FileOutputStream
