@@ -13,7 +13,7 @@ The library provides a number of extensions to simplify creating TeamCity build 
         <id>jitpack.io</id>
         <url>https://jitpack.io</url>
       </repository>
-    </repository>
+    </repositories>
 ```
 
 
