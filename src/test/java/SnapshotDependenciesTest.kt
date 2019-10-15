@@ -1,6 +1,7 @@
 import jetbrains.buildServer.configs.kotlin.v2018_2.*
-import org.junit.Assert.assertEquals
+import org.junit.Assert.*
 import org.junit.Test
+import java.lang.AssertionError
 
 
 class SnapshotDependenciesTest {
@@ -362,4 +363,55 @@ class SnapshotDependenciesTest {
         //endregion
     }
 
+    @Test(expected = AssertionError::class)
+    fun singleDependsOnParallelWithSettings() {
+        var par: Parallel
+
+        val Compile = BuildType { id("Compile") }
+        val Test = BuildType { id("Test") }
+        val RunInspections = BuildType { id("RunInspections") }
+        val RunPerformanceTests = BuildType { id("RunPerformanceTests") }
+        val Package = BuildType { id("Package") }
+
+        val project = Project {
+            sequence {
+                build(Compile) {
+                    produces("application.jar")
+                }
+                par = parallel {
+                    build(Test) {
+                        requires(Compile, "application.jar")
+                        produces("test.reports.zip")
+                    }
+                    sequence {
+                        build(RunInspections) {
+                            produces("inspection.reports.zip")
+                        }
+                        build(RunPerformanceTests) {
+                            produces("perf.reports.zip")
+                        }
+                    }
+
+                }
+                build(Package) {
+                    requires(Compile, "application.jar")
+                    produces("application.zip")
+                    dependsOn(par) {
+                       onDependencyFailure = FailureAction.FAIL_TO_START // <--- don't want to Package if any build in parallel failed
+                    }
+                }
+            }
+        }
+
+        //region assertions for sequenceDependencies
+        assertEquals(5, project.buildTypes.size)
+        assertEquals(3, Package.dependencies.items.size)
+        assertNull(Package.dependencies.items[0].snapshot)
+        assertNotNull(Package.dependencies.items[1].snapshot)
+        assertNotNull(Package.dependencies.items[2].snapshot)
+
+        val snapshot = Package.dependencies.items[1].snapshot
+        assertEquals(FailureAction.FAIL_TO_START, snapshot?.onDependencyFailure)
+        //endregion
+    }
 }
