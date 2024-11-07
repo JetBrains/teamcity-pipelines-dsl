@@ -1,6 +1,6 @@
 # TeamCity Pipelines DSL
 
-**Please note that TeamCity Build Chain DSL Extension (AKA Pipeline DSL) is no longer implemented as a separate library or plugin but included in TeamCity Kotlin DSL implementation and available as such since TeamCity version 2019.2**
+**Please note that THIS REPOSITORY IS OBSOLETE. TeamCity Build Chain DSL Extension (AKA Pipeline DSL) is no longer implemented as a separate library or plugin but included in TeamCity Kotlin DSL implementation and available as such since TeamCity version 2019.2**
 
 Kotlin DSL library for TeamCity pipelines
 
